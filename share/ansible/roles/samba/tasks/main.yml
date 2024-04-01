@@ -1,0 +1,13 @@
+- name: Sambaのインストール
+  apt:
+    name: samba
+
+- name: smb.confを転送
+  copy:
+    src: smb.conf
+    dest: /etc/samba/
+
+- name: Sambaを再起動
+  service:
+    name: smbd
+    state: restarted

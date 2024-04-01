@@ -1,0 +1,8 @@
+- hosts: localhost
+  become: yes
+  tasks:
+    - name: /storageをバックアップ
+      archive:
+        format: zip
+        path: /storage
+        dest: "backup{{ ansible_date_time.iso8601_basic }}.zip"

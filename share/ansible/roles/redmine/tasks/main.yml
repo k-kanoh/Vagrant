@@ -1,0 +1,52 @@
+- name: git clone docker-redmine-orchestration
+  git:
+    repo: https://github.com/yoshinorin/docker-redmine-orchestration.git
+    dest: /app/docker-redmine-orchestration
+
+- name: overwrite modified setting files
+  copy:
+    src: modified/
+    dest: /app/docker-redmine-orchestration
+
+- name: chmod 755 redmine_download.sh
+  file:
+    path: /app/docker-redmine-orchestration/redmine/redmine_download.sh
+    mode: 0755
+
+- name: execute redmine_download.sh
+  shell:
+    /app/docker-redmine-orchestration/redmine/redmine_download.sh
+  args:
+    chdir: /app/docker-redmine-orchestration/redmine
+
+- name: git clone redmine_theme_farend_fancy
+  git:
+    repo: https://github.com/farend/redmine_theme_farend_fancy.git
+    dest: /app/docker-redmine-orchestration/redmine/src/public/themes/farend_fancy
+
+- name: docker compose up
+  shell:
+    "docker compose up -d"
+  args:
+    chdir: /app/docker-redmine-orchestration
+
+- name: waiting for unicorn to start (60sec)
+  pause:
+    seconds: 60
+
+- name: git clone redmine-view-customize
+  git:
+    repo: https://github.com/onozaty/redmine-view-customize.git
+    dest: /app/docker-redmine-orchestration/redmine/src/plugins/view_customize
+
+- name: install redmine-view-customize
+  shell:
+    "docker compose exec redmine sh -c 'bundle install --without development test && bundle exec rake redmine:plugins:migrate RAILS_ENV=production'"
+  args:
+    chdir: /app/docker-redmine-orchestration
+
+- name: docker compose restart
+  shell:
+    "docker compose restart"
+  args:
+    chdir: /app/docker-redmine-orchestration
