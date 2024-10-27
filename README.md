@@ -1,6 +1,6 @@
 ## 概要
 
-- VirtualBox上のUbuntu-22.04にRedmineとSQLServerを作成します。
+- VirtualBox上のUbuntu-24.04にRedmineとSQLServerを作成します。
 - Redmine環境構築には https://github.com/yoshinorin/docker-redmine-orchestration を使用しています。
 
 ## 動作確認
@@ -17,6 +17,7 @@
 ```bash
 root$ cd /vagrant/ansible
 root$ ansible-playbook site.yml
+root$ ansible-playbook (任意のPlaybook).yml
 ```
 
 ### 3. https://192.168.0.99:3000/ へアクセス
@@ -24,6 +25,18 @@ root$ ansible-playbook site.yml
 - オレオレ証明書 `oreore\daieihawks.crt`をブラウザにインポートしておいてください。
 
 ## メモ
+
+### site.yml
+
+- samba
+- docker
+
+### 任意のPlaybook
+
+- Redmine
+- SQL Server
+- Node.js (user個別にインストール)
+- Elasticsearch
 
 ### Vagrantfile
 
