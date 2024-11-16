@@ -1,0 +1,85 @@
+services:
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    environment:
+      TZ: Asia/Tokyo
+    volumes:
+      # - ./nginx/config/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/config/nginx_subdomain.conf:/etc/nginx/nginx.conf
+      - /vagrant/oreore/daieihawks.crt:/daieihawks.crt
+      - /vagrant/oreore/daieihawks.key:/daieihawks.key
+    ports:
+      - "443:443"
+    depends_on:
+      - redmine
+      - gitlab
+    restart: unless-stopped
+
+  postgresql:
+    image: postgres:latest
+    container_name: postgresql
+    environment:
+      POSTGRES_PASSWORD: passw0rd
+      POSTGRES_USER: admin
+      TZ: Asia/Tokyo
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale-provider=icu --icu-locale=ja-JP"
+    volumes:
+      - ./postgresql/init:/docker-entrypoint-initdb.d
+      - /storage/postgresql/data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  redmine:
+    image: redmine:latest
+    container_name: redmine
+    environment:
+      REDMINE_DB_POSTGRES: postgresql
+      REDMINE_DB_DATABASE: redmine
+      REDMINE_DB_USERNAME: admin
+      REDMINE_DB_PASSWORD: passw0rd
+      TZ: Asia/Tokyo
+    volumes:
+      - ./redmine/config/configuration.yml:/usr/src/redmine/config/configuration.yml
+      - ./redmine/plugins:/usr/src/redmine/plugins
+      - ./redmine/themes:/usr/src/redmine/public/themes
+      - /storage/redmine/files:/usr/src/redmine/files
+    depends_on:
+      - postgresql
+    restart: unless-stopped
+
+  gitlab:
+    image: gitlab/gitlab-ce:latest
+    container_name: gitlab
+    environment:
+      TZ: Asia/Tokyo
+      GITLAB_OMNIBUS_CONFIG: |
+        # external_url 'https://192.168.0.99/gitlab'
+        gitlab_rails['db_adapter'] = "postgresql"
+        gitlab_rails['db_database'] = "gitlab"
+        gitlab_rails['db_username'] = "admin"
+        gitlab_rails['db_password'] = "passw0rd"
+        gitlab_rails['db_host'] = "postgresql"
+        gitlab_rails['time_zone'] = 'Asia/Tokyo'
+        gitlab_rails['smtp_enable'] = true
+        gitlab_rails['smtp_address'] = "mailpit"
+        gitlab_rails['smtp_port'] = 1025
+        nginx['listen_port'] = 80
+        nginx['listen_https'] = false
+        nginx['proxy_set_headers'] = {
+          "X-Forwarded-Proto" => "https",
+          "X-Forwarded-Ssl" => "on"
+        }
+    volumes:
+      - /storage/gitlab/data:/var/opt/gitlab
+    depends_on:
+      - postgresql
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: mailpit
+    ports:
+      - "8025:8025"
+    restart: unless-stopped

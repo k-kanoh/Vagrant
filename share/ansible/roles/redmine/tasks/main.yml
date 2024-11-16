@@ -1,52 +1,38 @@
-- name: git clone docker-redmine-orchestration
-  git:
-    repo: https://github.com/yoshinorin/docker-redmine-orchestration.git
-    dest: /app/docker-redmine-orchestration
-
-- name: overwrite modified setting files
+- name: Transfer configuration files
   copy:
-    src: modified/
-    dest: /app/docker-redmine-orchestration
+    src: files/
+    dest: /app/docker-redmine-gitlab
 
-- name: chmod 755 redmine_download.sh
-  file:
-    path: /app/docker-redmine-orchestration/redmine/redmine_download.sh
-    mode: 0755
-
-- name: execute redmine_download.sh
-  shell:
-    /app/docker-redmine-orchestration/redmine/redmine_download.sh
-  args:
-    chdir: /app/docker-redmine-orchestration/redmine
-
-- name: git clone redmine_theme_farend_fancy
+- name: Clone redmine_theme_farend_fancy
   git:
     repo: https://github.com/farend/redmine_theme_farend_fancy.git
-    dest: /app/docker-redmine-orchestration/redmine/src/public/themes/farend_fancy
+    dest: /app/docker-redmine-gitlab/redmine/themes/farend_fancy
 
-- name: docker compose up
-  shell:
-    "docker compose up -d"
+- name: Start containers
+  shell: docker compose up -d
   args:
-    chdir: /app/docker-redmine-orchestration
+    chdir: /app/docker-redmine-gitlab
 
-- name: waiting for unicorn to start (60sec)
-  pause:
-    seconds: 60
+- name: Wait for Redmine to be ready
+  shell: until docker compose exec -T redmine curl -s --fail http://localhost:3000 > /dev/null; do sleep 1; done
+  args:
+    chdir: /app/docker-redmine-gitlab
 
-- name: git clone redmine-view-customize
+- name: Clone redmine-view-customize plugin
   git:
     repo: https://github.com/onozaty/redmine-view-customize.git
-    dest: /app/docker-redmine-orchestration/redmine/src/plugins/view_customize
+    dest: /app/docker-redmine-gitlab/redmine/plugins/view_customize
 
-- name: install redmine-view-customize
-  shell:
-    "docker compose exec redmine sh -c 'bundle install --without development test && bundle exec rake redmine:plugins:migrate RAILS_ENV=production'"
+- name: Install redmine-view-customize
+  shell: |
+    docker compose exec -T redmine bash -c '
+      bundle config set --local without "development test" &&
+      bundle install &&
+      bundle exec rake redmine:plugins:migrate RAILS_ENV=production'
   args:
-    chdir: /app/docker-redmine-orchestration
+    chdir: /app/docker-redmine-gitlab
 
-- name: docker compose restart
-  shell:
-    "docker compose restart"
+- name: Restart Redmine container
+  shell: docker compose restart redmine
   args:
-    chdir: /app/docker-redmine-orchestration
+    chdir: /app/docker-redmine-gitlab

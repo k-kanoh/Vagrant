@@ -12,7 +12,5 @@ services:
       MSSQL_LCID: 1041
       MSSQL_COLLATION: Japanese_CI_AS
     volumes:
-      - "/storage/mssql/data:/var/opt/mssql/data"
-      - "/storage/mssql/log:/var/opt/mssql/log"
-      - "/storage/mssql/secrets:/var/opt/mssql/secrets"
-    restart: always
+      - /storage/mssql/data:/var/opt/mssql/data
+    restart: unless-stopped
