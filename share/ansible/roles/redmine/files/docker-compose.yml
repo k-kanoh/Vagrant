@@ -13,7 +13,7 @@ services:
       - "443:443"
     depends_on:
       - redmine
-      - gitlab
+      - gitea
     restart: unless-stopped
 
   postgresql:
@@ -49,30 +49,19 @@ services:
       - postgresql
     restart: unless-stopped
 
-  gitlab:
-    image: gitlab/gitlab-ce:latest
-    container_name: gitlab
+  gitea:
+    image: gitea/gitea:latest
+    container_name: gitea
     environment:
-      TZ: Asia/Tokyo
-      GITLAB_OMNIBUS_CONFIG: |
-        # external_url 'https://192.168.0.99/gitlab'
-        gitlab_rails['db_adapter'] = "postgresql"
-        gitlab_rails['db_database'] = "gitlab"
-        gitlab_rails['db_username'] = "admin"
-        gitlab_rails['db_password'] = "passw0rd"
-        gitlab_rails['db_host'] = "postgresql"
-        gitlab_rails['time_zone'] = 'Asia/Tokyo'
-        gitlab_rails['smtp_enable'] = true
-        gitlab_rails['smtp_address'] = "mailpit"
-        gitlab_rails['smtp_port'] = 1025
-        nginx['listen_port'] = 80
-        nginx['listen_https'] = false
-        nginx['proxy_set_headers'] = {
-          "X-Forwarded-Proto" => "https",
-          "X-Forwarded-Ssl" => "on"
-        }
+      # - GITEA__server__ROOT_URL=https://192.168.0.99/gitea
+      - GITEA__database__DB_TYPE=postgres
+      - GITEA__database__HOST=postgresql
+      - GITEA__database__NAME=gitea
+      - GITEA__database__USER=admin
+      - GITEA__database__PASSWD=passw0rd
+      - TZ=Asia/Tokyo
     volumes:
-      - /storage/gitlab/data:/var/opt/gitlab
+      - /storage/gitea/data:/data
     depends_on:
       - postgresql
     restart: unless-stopped
